@@ -7,6 +7,7 @@ __pycache__/
 *.so
 
 # MIP specific
+*.zip
 *.mps
 
 # Distribution / packaging
@@ -26,7 +27,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-.idea
+.idea/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
