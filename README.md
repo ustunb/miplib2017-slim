@@ -6,7 +6,7 @@ This repository contains code to reproduce the SLIM IP instances in our submissi
 
 Our submission includes 9 instances of the SLIM IP (3 datasets x 3 instances per dataset). We picked instances to explore solver performance with regards to different computational tasks that are relevant to machine learning applications (e.g., 0-1 loss minimization, feature selection, discrete constraints).
 
-Each instance is stored in the ``/instances/`` directory in [MPS](https://en.wikipedia.org/wiki/MPS_(format)) format. The list of instances, in order of difficulty, include:
+Each instance is stored in the ``/instances/`` directory in [MPS](https://en.wikipedia.org/wiki/MPS_(format)) format.  The instances listed in order of difficulty are named as folows:
 
 1. ``breastcancer_max_5_features.mps`` (easiest to solve)
 2. ``breastcancer_regularized.mps``
@@ -18,20 +18,17 @@ Each instance is stored in the ``/instances/`` directory in [MPS](https://en.wik
 8. ``adult_regularized.mps``
 9. ``adult_best.mps`` (hardest to solve)
 
-Based on our experience with CPLEX 12.7, we expect that a commercial MIP solver will be able to solve instances 1-4 in <10 minutes and 5-7 in <1 hour. The solution to 8-9 will take longer.  
+Based on our experience with CPLEX 12.7, we expect that a commercial solver should solve instances 1-4 in < 10 minutes and instances 5 - 7 in <1 hour. The solution to instances 8-9 will take longer.  
 
-We produced the instance files using source code from the [slim-python](https://github.com/ustunb/slim-python) package using the CPLEX Python API 12.7. To recreate the instances, simply run ``/models/create_slim_instances.py``
-
-We note that the SLIM IP formulation may change in the future. 
-
-## Instance Overview 
-
+We produced the instance files using source code from the [slim-python](https://github.com/ustunb/slim-python) package using the CPLEX Python API 12.7. To recreate the instances, simply run ``/models/create_slim_instances.py`` 
+  
+## About the Instances
+  
 Each instance of the SLIM IP is designed to output a scoring system for a binary classification dataset with *N* samples and *d* features. For a given dataset, the SLIM IP has roughly *N + 3d* variables and *N + 5d* constraints (with a few additional variables/constraints based on the problem type). 
-
 
 #### Datasets 
 
-We chose 3 popular datasets from the [UCI Machine Learning Repository](http://archive.ics.uci.edu/ml/).
+We chose 3 datasets from the [UCI Machine Learning Repository](http://archive.ics.uci.edu/ml/).
   
 | dataset      | classification task                                | samples (N) | features (d) | source                                                                                                                     |
 |--------------|----------------------------------------------------|-------------|--------------|----------------------------------------------------------------------------------------------------------------------------|
@@ -51,7 +48,7 @@ For each ``dataset`` in {``breastcancer``, ``mushroom``, ``adult``}, we formulat
 
 #### Difficulty
 
-The SLIM IP involves three computationally challenging tasks: 
+The SLIM IP involves 3 computationally challenging tasks: 
 
 1. 0-1 loss minimization (harder when N is large)
 2. feature selection / L0-regularization (harder when d is large)
@@ -63,7 +60,7 @@ For a given problem type, we expect: ``breastcancer`` will be easier than ``mush
 
 For a given dataset, the difficulty of the SLIM IP is governed by the feature selection. We expect that the ``max_5_features`` problem will be the easiest (well-defined limit on # of features), followed by `penalized` (implied limit on the number of features), and then `best` (no effective feature selection).  
 
-#### SLIM
+## About SLIM
 
 [SLIM](http://http//arxiv.org/abs/1502.04269/) is a machine learning method to build data-driven *scoring systems.* These are simple classification models let users make quick predictions by adding, subtracting and multiplying a few small numbers. SLIM scoring systems are built solving an integer program (IP). In contrast to current machine learning methods, this results in models that are fully optimized for accuracy, sparsity, and integer coefficients, and that can satisfy difficult constraints **without parameter tuning** (e.g. hard limits on model size, sensitivity, specificity).
 
