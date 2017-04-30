@@ -19,6 +19,7 @@ for problem_type in ${all_problem_types[*]}; do
 
 data_file="${data_dir}/${data_name}_processed.csv"
 instance_file="${instances_dir}/${data_name}_${problem_type}.mps"
+instance_info="${misc_dir}/${data_name}_${problem_type}.p"
 
 max_coef=10
 max_offset=100
@@ -38,13 +39,14 @@ case ${problem_type} in
     ;;
 esac
 
-#python "${models_dir}/create_slim_instances.py"  \
-#    --data_file "${data_file}" \
-#    --instance_file "${instance_file}" \
-#    --c0_value "${c0_value}" \
-#    --max_size "${max_size}" \
-#    --max_coef "${max_coef}" \
-#    --max_offset "${max_offset}"
+python "${models_dir}/create_slim_instance.py"  \
+    --data_file "${data_file}" \
+    --instance_file "${instance_file}" \
+    --instance_info "${instance_info}" \
+    --c0_value "${c0_value}" \
+    --max_size "${max_size}" \
+    --max_coef "${max_coef}" \
+    --max_offset "${max_offset}"
 
 done
 done

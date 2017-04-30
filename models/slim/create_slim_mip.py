@@ -1,10 +1,10 @@
 import cplex
-import numpy as np
 from math import ceil, floor
 from helper_functions import *
 from CoefficientSet import CoefficientSet
 
-def create_slim_IP(input, print_flag=False):
+
+def create_slim_ip(input, print_flag=False):
     """
     :param input: dictionary with the following keys
     %Y          N x 1 np.array of labels (-1 or 1 only)
@@ -418,9 +418,6 @@ def create_slim_IP(input, print_flag=False):
     beta_names = [n for n in beta_names if n not in variables_to_drop]
 
     slim_info = {
-        #
-        #key parameters
-        #
         "C_0": C_0,
         "C_1": C_1,
         "w_pos": w_pos,
@@ -452,7 +449,6 @@ def create_slim_IP(input, print_flag=False):
         "names": slim_IP.variables.get_names(),
         #
         # MIP variables indices
-        #
         "rho_idx":  slim_IP.variables.get_indices(rho_names),
         "alpha_idx": slim_IP.variables.get_indices(alpha_names),
         "beta_idx": slim_IP.variables.get_indices(beta_names),
@@ -463,7 +459,6 @@ def create_slim_IP(input, print_flag=False):
         "total_error_neg_idx": slim_IP.variables.get_indices(total_error_neg_name),
         #
         # MIP variables names
-        #
         "rho_names": rho_names,
         "alpha_names": alpha_names,
         "beta_names": beta_names,

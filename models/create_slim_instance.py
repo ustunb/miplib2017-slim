@@ -3,41 +3,13 @@ import sys
 import numpy as np
 import argparse
 import logging
-import json
-sys.path.insert(0, os.getcwd() + '/models/')
+import pickle
+
+#add '/models/' directory to search path to avoid import errors
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import slim as slim
 
-
-# parsing
-def is_positive_integer(value):
-    parsed_value = int(value)
-    if parsed_value <= 0:
-        raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
-    return parsed_value
-
-
-def is_negative_one_or_positive_float(value):
-    parsed_value = float(value)
-    if not (parsed_value == -1 or parsed_value > 0.0):
-        raise argparse.ArgumentTypeError("%s is an invalid value (must be -1 or > 0.00)" % value)
-    return parsed_value
-
-
-def is_negative_one_or_positive_integer(value):
-    parsed_value = int(value)
-    if not (parsed_value == -1 or parsed_value >= 1):
-        raise argparse.ArgumentTypeError("%s is an invalid value (must be -1 or >=1)" % value)
-    else:
-        return parsed_value
-
-
-def is_file_on_disk(file_name):
-    if not os.path.isfile(file_name):
-        raise argparse.ArgumentTypeError("the file %s does not exist!" % file_name)
-    else:
-        return file_name
-
-
+# parse command line arguments
 def setup_parser():
     """
     Create an argparse Parser object for command line arguments to create_slim_instance.
@@ -47,6 +19,41 @@ def setup_parser():
     See https://docs.python.org/3/library/argparse.html for configuration
     """
 
+    def is_positive_integer(value):
+        parsed_value = int(value)
+        if parsed_value <= 0:
+            raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
+        return parsed_value
+
+    def is_positive_float_or_negative_one(value):
+        parsed_value = float(value)
+        if not (parsed_value == -1 or parsed_value > 0.0):
+            raise argparse.ArgumentTypeError("%s is an invalid value (must be -1 or > 0.00)" % value)
+        return parsed_value
+
+    def is_positive_integer_or_negative_one(value):
+        parsed_value = int(value)
+        if not (parsed_value == -1 or parsed_value >= 1):
+            raise argparse.ArgumentTypeError("%s is an invalid value (must be -1 or >=1)" % value)
+        else:
+            return parsed_value
+
+    def is_file_on_disk(file_name):
+        if not os.path.isfile(file_name):
+            raise argparse.ArgumentTypeError("the file %s does not exist!" % file_name)
+        else:
+            return file_name
+
+    def file_choices(choices, file_name):
+        ext = os.path.splitext(file_name)[1][1:]
+        if ext not in choices:
+            parser.error("file doesn't end with one of {}".format(choices))
+        return file_name
+
+    def is_file_of_type_on_disk(choices, file_name):
+        return is_file_on_disk(file_choices(choices, file_name))
+
+
     parser = argparse.ArgumentParser(
         prog='create_slim_instance',
         description='Create a SLIM IP instance and save it as a MPS file from the command shell',
@@ -55,17 +62,21 @@ def setup_parser():
     )
 
     parser.add_argument('--data_file',
-                        type=is_file_on_disk,
+                        type=lambda s: is_file_of_type_on_disk("csv", s),
                         required=True,
                         help='csv file with training data')
 
     parser.add_argument('--instance_file',
-                        type=str,
+                        type=lambda s: file_choices("mps", s),
                         required=True,
-                        help='name of results file (must not already exist)')
+                        help='name of instance file (must end in .mps)')
+
+    parser.add_argument('--instance_info',
+                        type=lambda s: file_choices("p", s),
+                        help='name of instance information file (must be .p)')
 
     parser.add_argument('--max_size',
-                        type = is_negative_one_or_positive_integer,
+                        type = is_positive_integer_or_negative_one,
                         default=-1,
                         help='maximum number of non-zero coefficients; set as -1 for no limit')
 
@@ -75,12 +86,12 @@ def setup_parser():
                         help='value of upper and lower bounds for any coefficient')
 
     parser.add_argument('--max_offset',
-                        type=is_negative_one_or_positive_integer,
+                        type=is_positive_integer_or_negative_one,
                         default=-1,
                         help='value of upper and lower bound on offset parameter; set as -1 to use a conservative value')
 
     parser.add_argument('--c0_value',
-                        type=is_negative_one_or_positive_float,
+                        type=is_positive_float_or_negative_one,
                         default=-1,
                         help='l0 regularization parameter; set as a positive float > 0.00; or -1 for smallest value')
 
@@ -94,8 +105,8 @@ def setup_parser():
 
     return parser
 
-
-def create_slim_IP_instance(data_file, instance_file,  max_coef=10, c0_value=-1, max_size =-1, max_offset=-1, logger = None):
+# create instance
+def create_slim_instance(data_file, max_coef=10, c0_value=-1, max_size =-1, max_offset=-1, logger = None):
 
     # load dataset from csv
     data = slim.load_data_from_csv(data_file)
@@ -157,8 +168,7 @@ def create_slim_IP_instance(data_file, instance_file,  max_coef=10, c0_value=-1,
         'coef_constraints': coef_constraints
     }
 
-    slim_IP, slim_info = slim.create_slim_IP(slim_input)
-    slim_IP.write(instance_file)
+    slim_IP, slim_info = slim.create_slim_ip(slim_input)
     return slim_IP, slim_info
 
 if __name__ == '__main__':
@@ -174,20 +184,25 @@ if __name__ == '__main__':
     logger = slim.setup_logging(logger, log_to_console=(not parsed.silent), log_file=parsed.log)
     logger.setLevel(logging.INFO)
     logger.info("running 'create_slim_instance.py'")
-    logger.info("working directory: %r" % os.getcwd())
-    logger.info("parsed the following variables:\n-%s" % '-'.join(parsed_string))
+    logger.info("current working directory: %r" % os.getcwd())
+    logger.info("parsed command line arguments:\n-%s" % '-'.join(parsed_string))
 
+    slim_IP, slim_info = create_slim_instance(data_file=parsed.data_file,
+                                              max_coef=parsed.max_coef,
+                                              max_size=parsed.max_size,
+                                              max_offset=parsed.max_offset,
+                                              c0_value=parsed.c0_value,
+                                              logger=logger)
+    logger.info("generated SLIM IP")
 
-    logger.info("creating SLIM IP instance'")
-    slim_IP, slim_info = create_slim_IP_instance(data_file=parsed.data_file,
-                                                 instance_file=parsed.instance_file,
-                                                 max_coef=parsed.max_coef,
-                                                 max_size=parsed.max_size,
-                                                 max_offset=parsed.max_offset,
-                                                 c0_value=parsed.c0_value,
-                                                 logger=logger)
+    slim_IP.write(parsed.instance_file)
+    logger.info("saved SLIM IP to file: %s" % parsed.instance_file)
 
-    logger.info("finished creating SLIM IP instance.")
-    logger.info("quitting.")
+    if parsed.instance_info is not None:
+        with open(parsed.instance_info, 'w') as fh:
+            pickle.dump(slim_info, fh)
+        logger.info("saved SLIM IP information to file: %s" % parsed.instance_info)
 
+    logger.info("quitting")
     sys.exit(0)
+
